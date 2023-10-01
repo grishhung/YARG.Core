@@ -67,6 +67,7 @@ namespace YARG.Core.Chart
         Percussion,
     }
 
+    [Flags]
     public enum VocalsPhraseFlags
     {
         None = 0,

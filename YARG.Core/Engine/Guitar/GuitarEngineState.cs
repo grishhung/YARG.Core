@@ -1,8 +1,9 @@
-﻿namespace YARG.Core.Engine.Guitar
-{
-    public class GuitarEngineState : BaseEngineState
-    {
+﻿using YARG.Core.Engine.Track;
 
+namespace YARG.Core.Engine.Guitar
+{
+    public class GuitarEngineState : TrackEngineState
+    {
         public byte ButtonMask;
         public byte LastButtonMask;
         public byte TapButtonMask;

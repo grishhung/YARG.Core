@@ -2,7 +2,6 @@
 {
     public abstract class BaseEngineState
     {
-
         public int NoteIndex;
 
         public double CurrentTime;
@@ -14,10 +13,7 @@
         public int CurrentTimeSigIndex;
         public int NextTimeSigIndex;
 
-        public int CurrentSoloIndex;
         public int CurrentStarIndex;
-
-        public bool IsSoloActive;
 
         public uint TicksEveryEightMeasures;
 
@@ -34,13 +30,9 @@
             CurrentTimeSigIndex = 0;
             NextTimeSigIndex = 1;
 
-            CurrentSoloIndex = 0;
             CurrentStarIndex = 0;
-
-            IsSoloActive = false;
 
             TicksEveryEightMeasures = 0;
         }
-
     }
 }

@@ -6,7 +6,7 @@ using YARG.Core.Input;
 
 namespace YARG.Core.Engine.Guitar
 {
-    public abstract class GuitarEngine : TrackEngine<GuitarNote, GuitarAction, GuitarEngineParameters,
+    public abstract class GuitarEngine : TrackEngine<GuitarNote, GuitarEngineParameters,
         GuitarStats, GuitarEngineState>
     {
         public delegate void OverstrumEvent();
