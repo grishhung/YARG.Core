@@ -1,6 +1,8 @@
-﻿namespace YARG.Core.Engine.Drums
+﻿using YARG.Core.Engine.Track;
+
+namespace YARG.Core.Engine.Drums
 {
-    public class DrumsEngineParameters : BaseEngineParameters
+    public class DrumsEngineParameters : TrackEngineParameters
     {
         public DrumsEngineParameters()
         {

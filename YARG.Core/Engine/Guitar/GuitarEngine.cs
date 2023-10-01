@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using YARG.Core.Chart;
+using YARG.Core.Engine.Track;
 using YARG.Core.Input;
 
 namespace YARG.Core.Engine.Guitar
 {
-    public abstract class GuitarEngine : BaseEngine<GuitarNote, GuitarAction, GuitarEngineParameters,
+    public abstract class GuitarEngine : TrackEngine<GuitarNote, GuitarAction, GuitarEngineParameters,
         GuitarStats, GuitarEngineState>
     {
         public delegate void OverstrumEvent();

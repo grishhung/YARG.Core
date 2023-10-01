@@ -167,14 +167,7 @@ namespace YARG.Core.Engine
         where TEngineStats : BaseStats, new()
         where TEngineState : BaseEngineState, new()
     {
-        protected const int POINTS_PER_NOTE = 50;
-        protected const int POINTS_PER_BEAT = 25;
-
         protected const double STAR_POWER_PHRASE_AMOUNT = 0.25;
-
-        public delegate void NoteHitEvent(int noteIndex, TNoteType note);
-
-        public delegate void NoteMissedEvent(int noteIndex, TNoteType note);
 
         public delegate void StarPowerPhraseHitEvent(TNoteType note);
 
@@ -185,9 +178,6 @@ namespace YARG.Core.Engine
         public delegate void SoloStartEvent(SoloSection soloSection);
 
         public delegate void SoloEndEvent(SoloSection soloSection);
-
-        public NoteHitEvent?    OnNoteHit;
-        public NoteMissedEvent? OnNoteMissed;
 
         public StarPowerPhraseHitEvent?  OnStarPowerPhraseHit;
         public StarPowerPhraseMissEvent? OnStarPowerPhraseMissed;
@@ -261,21 +251,6 @@ namespace YARG.Core.Engine
                 solo.NotesHit = 0;
             }
         }
-
-        protected abstract bool CheckForNoteHit();
-
-        /// <summary>
-        /// Checks if the given note can be hit with the current input state.
-        /// </summary>
-        /// <param name="note">The Note to attempt to hit.</param>
-        /// <returns>True if note can be hit. False otherwise.</returns>
-        protected abstract bool CanNoteBeHit(TNoteType note);
-
-        protected abstract bool HitNote(TNoteType note);
-
-        protected abstract void MissNote(TNoteType note);
-
-        protected abstract void AddScore(TNoteType note);
 
         protected abstract void UpdateMultiplier();
 
@@ -444,12 +419,6 @@ namespace YARG.Core.Engine
         }
 
         protected abstract int CalculateBaseScore();
-
-        protected bool IsNoteInWindow(TNoteType note)
-        {
-            return note.Time - State.CurrentTime < EngineParameters.BackEnd &&
-                note.Time - State.CurrentTime > EngineParameters.FrontEnd;
-        }
 
         private List<SoloSection> GetSoloSections()
         {

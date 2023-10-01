@@ -1,8 +1,9 @@
 ﻿using System.IO;
+using YARG.Core.Engine.Track;
 
 namespace YARG.Core.Engine.Guitar
 {
-    public class GuitarEngineParameters : BaseEngineParameters
+    public class GuitarEngineParameters : TrackEngineParameters
     {
         public double HopoLeniency { get; private set; }
 
