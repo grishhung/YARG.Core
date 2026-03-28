@@ -1,4 +1,6 @@
-﻿using System.IO;
+using System.Collections.Generic;
+using System.IO;
+using YARG.Core.Chart;
 using YARG.Core.Extensions;
 using YARG.Core.IO;
 using YARG.Core.Replays;
@@ -102,9 +104,19 @@ namespace YARG.Core.Engine
         public int NotesHit;
 
         /// <summary>
+        /// Number of laned notes which have been hit.
+        /// </summary>
+        public int LanedNotesHit;
+
+        /// <summary>
         /// Number of notes in the chart. This value should never be modified.
         /// </summary>
         public int TotalNotes;
+
+        /// <summary>
+        /// Number of chords in the chart. Defaults to total notes, but some instruments calculate differently.
+        /// </summary>
+        public int TotalChords;
 
         /// <summary>
         /// Number of notes which have been missed.
@@ -186,7 +198,22 @@ namespace YARG.Core.Engine
         /// <summary>
         /// Is this a full combo?
         /// </summary>
-        public bool IsFullCombo => MaxCombo == TotalNotes;
+        public virtual bool IsFullCombo => MaxCombo == TotalNotes;
+
+        /// <summary>
+        /// The total offset. This, together with notes hit is used to calculate the average offset.
+        /// </summary>
+        private double TotalOffset;
+
+        /// <summary>
+        /// The average offset.
+        /// </summary>
+        private double AverageOffset;
+
+        /// <summary>
+        /// Individual note offsets for all hittable note objects, in seconds.
+        /// </summary>
+        private readonly List<double> OffsetSamples = new();
 
         protected BaseStats()
         {
@@ -207,6 +234,10 @@ namespace YARG.Core.Engine
 
             NotesHit = stats.NotesHit;
             TotalNotes = stats.TotalNotes;
+
+            TotalOffset = stats.TotalOffset;
+            AverageOffset = stats.AverageOffset;
+            OffsetSamples = new List<double>(stats.OffsetSamples);
 
             StarPowerTickAmount = stats.StarPowerTickAmount;
             TotalStarPowerTicks = stats.TotalStarPowerTicks;
@@ -278,6 +309,9 @@ namespace YARG.Core.Engine
             ScoreMultiplier = 1;
             BandMultiplier = 1;
             NotesHit = 0;
+            TotalOffset = 0.0;
+            AverageOffset = 0.0;
+            OffsetSamples.Clear();
             // Don't reset TotalNotes
             // TotalNotes = 0;
 
@@ -333,5 +367,36 @@ namespace YARG.Core.Engine
         }
 
         public abstract ReplayStats ConstructReplayStats(string name);
+
+        public double GetAverageOffset()
+        {
+            var offsetNotes = NotesHit - LanedNotesHit;
+            return offsetNotes > 0 ? TotalOffset / offsetNotes : 0.0;
+        }
+
+        /// <summary>
+        /// Returns per-note timing offsets used for score-screen timing distribution visualization.
+        /// Values are in seconds, where negative is early and positive is late.
+        /// </summary>
+        public IReadOnlyList<double> GetOffsetSamples()
+        {
+            return OffsetSamples;
+        }
+
+        public void IncrementNotesHit<NoteType>(NoteType note, double current_time) where NoteType : Note<NoteType>
+        {
+            NotesHit++;
+
+            if (!note.IsLane)
+            {
+                double offset = current_time - note.Time;
+                TotalOffset += offset;
+                OffsetSamples.Add(offset);
+            }
+            else
+            {
+                LanedNotesHit++;
+            }
+        }
     }
 }

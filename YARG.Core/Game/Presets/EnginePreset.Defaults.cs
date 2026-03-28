@@ -35,6 +35,7 @@ namespace YARG.Core.Game
                     DynamicScale = 1,
                     DynamicSlope = 0.93,
                     DynamicGamma = 1.5,
+                    TremoloFrontEndPercent = 1.0
                 }
             },
             Drums =
@@ -46,7 +47,8 @@ namespace YARG.Core.Game
                     IsDynamic = true,
                     DynamicScale = 1,
                     DynamicSlope = 0.60615,
-                    DynamicGamma = 2
+                    DynamicGamma = 2,
+                    TremoloFrontEndPercent = 1.0
                 }
             },
             Vocals =
@@ -59,11 +61,20 @@ namespace YARG.Core.Game
             }
         };
 
+        public static EnginePreset SoloTaps = new("Solo Taps", true)
+        {
+            FiveFretGuitar =
+            {
+                SoloTaps = true
+            }
+        };
+
         public static readonly List<EnginePreset> Defaults = new()
         {
             Default,
             Casual,
-            Precision
+            Precision,
+            SoloTaps
         };
     }
 }

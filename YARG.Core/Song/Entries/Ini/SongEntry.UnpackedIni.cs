@@ -33,7 +33,7 @@ namespace YARG.Core.Song
         public override StemMixer? LoadAudio(float speed, double volume, params SongStem[] ignoreStems)
         {
             bool clampStemVolume = _metadata.Source.ToLowerInvariant() == "yarg";
-            var mixer = GlobalAudioHandler.CreateMixer(ToString(), speed, volume, clampStemVolume);
+            var mixer = GlobalAudioHandler.CreateMixer(ToString(), speed, volume, clampStemVolume, true);
             if (mixer == null)
             {
                 YargLogger.LogError("Failed to create mixer!");
@@ -85,7 +85,7 @@ namespace YARG.Core.Song
                 var audioFile = Path.Combine(_location, filename);
                 if (File.Exists(audioFile))
                 {
-                    return GlobalAudioHandler.LoadCustomFile(audioFile, speed, 0, SongStem.Preview);
+                    return GlobalAudioHandler.LoadCustomFile(audioFile, speed, 0, true, SongStem.Preview);
                 }
             }
             return LoadAudio(speed, 0, SongStem.Crowd);
@@ -164,20 +164,26 @@ namespace YARG.Core.Song
 
         protected override FixedArray<byte> GetChartData(string filename)
         {
-            var data = default(FixedArray<byte>);
-
             string chartPath = Path.Combine(_location, filename);
-            if (AbridgedFileInfo.Validate(chartPath, in _chartLastWrite))
+            if (!AbridgedFileInfo.Validate(chartPath, in _chartLastWrite))
             {
-                string iniPath = Path.Combine(_location, "song.ini");
-                if (_iniLastWrite.HasValue
-                    ? AbridgedFileInfo.Validate(iniPath, _iniLastWrite.Value)
-                    : !File.Exists(iniPath))
+                return null;
+            }
+
+            string iniPath = Path.Combine(_location, "song.ini");
+            if (_iniLastWrite.HasValue)
+            {
+                if (!AbridgedFileInfo.Validate(iniPath, _iniLastWrite.Value) && File.Exists(iniPath))
                 {
-                    data = FixedArray.LoadFile(chartPath);
+                    return null;
                 }
             }
-            return data;
+            else if (File.Exists(iniPath)) 
+            {
+                return null;
+            }
+
+            return FixedArray.LoadFile(chartPath);
         }
 
         private Dictionary<string, string> GetSubFiles()
