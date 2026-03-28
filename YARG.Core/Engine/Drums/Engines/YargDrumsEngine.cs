@@ -25,12 +25,18 @@ namespace YARG.Core.Engine.Drums.Engines
                     var eliteDrumsAction = gameInput.GetAction<EliteDrumsAction>();
                     Action = ConvertMidiDrumsInput(eliteDrumsAction, Chart.Instrument);
                     PadHit = Action is null ? null : ConvertInputToPad(EngineParameters.Mode, Action.Value);
-                } else
+                }
+                else
                 {
                     Action = gameInput.GetAction<DrumsAction>();
                     PadHit = ConvertInputToPad(EngineParameters.Mode, gameInput.GetAction<DrumsAction>());
                 }
                 HitVelocity = gameInput.Axis;
+
+                if (PadHit != null)
+                {
+                    SubmitLaneNote((int) PadHit);
+                }
             }
         }
 
@@ -50,7 +56,9 @@ namespace YARG.Core.Engine.Drums.Engines
                     EliteDrumsAction.FourLaneGreenCymbal => DrumsAction.Cymbal3,
                     _ => null
                 };
-            } if (target is Instrument.FiveLaneDrums)
+            }
+
+            if (target is Instrument.FiveLaneDrums)
             {
                 return action switch
                 {
@@ -79,7 +87,7 @@ namespace YARG.Core.Engine.Drums.Engines
             }
             else if (Action is { } padAction)
             {
-                OnPadHit?.Invoke(padAction, false, HitVelocity.GetValueOrDefault(0));
+                OnPadHit?.Invoke(padAction, false, false, DrumNoteType.Neutral, HitVelocity.GetValueOrDefault(0));
                 ResetPadState();
             }
         }
@@ -99,12 +107,21 @@ namespace YARG.Core.Engine.Drums.Engines
                     // Miss out the back end
                     if (!IsNoteInWindow(note, out bool missed))
                     {
+                        // You can't skip ahead if the note is not in the hit window to begin with
+                        stopSkipping = true;
+
                         if (isFirstNoteInWindow && missed)
                         {
                             // If one of the notes in the chord was missed out the back end,
                             // that means all of them would miss.
                             foreach (var missedNote in parentNote.AllNotes)
                             {
+                                // Intercept missed note while lane phrase is active and missed note is in forgiveness window
+                                if (HitNoteFromLane(missedNote))
+                                {
+                                    continue;
+                                }
+
                                 // Allow drummers to skip SP activation notes without being penalized.
                                 if (missedNote.IsStarPowerActivator && CanStarPowerActivate)
                                 {
@@ -115,8 +132,6 @@ namespace YARG.Core.Engine.Drums.Engines
                             }
                         }
 
-                        // You can't skip ahead if the note is not in the hit window to begin with
-                        stopSkipping = true;
                         break;
                     }
 
@@ -128,7 +143,7 @@ namespace YARG.Core.Engine.Drums.Engines
                         // TODO - Deadly Dynamics modifier check on awardVelocityBonus
 
                         HitNote(note);
-                        OnPadHit?.Invoke(Action!.Value, true, HitVelocity.GetValueOrDefault(0));
+                        OnPadHit?.Invoke(Action!.Value, true, awardVelocityBonus, note.Type, HitVelocity.GetValueOrDefault(0));
 
                         if (awardVelocityBonus)
                         {
@@ -168,7 +183,7 @@ namespace YARG.Core.Engine.Drums.Engines
             // If no note was hit but the user hit a pad, then over hit
             if (PadHit != null)
             {
-                OnPadHit?.Invoke(Action!.Value, false, HitVelocity.GetValueOrDefault(0));
+                OnPadHit?.Invoke(Action!.Value, false, false, DrumNoteType.Neutral, HitVelocity.GetValueOrDefault(0));
                 Overhit();
                 ResetPadState();
             }

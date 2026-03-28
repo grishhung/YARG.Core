@@ -106,6 +106,10 @@ namespace YARG.Core.Chart
                 if (!isPhraseEnd(phraseEndExpert))
                 {
                     phraseEndExpert.ActivateFlag(phraseEndFlag);
+                    foreach (var child in phraseEndExpert.ChildNotes)
+                    {
+                        child.ActivateFlag(phraseEndFlag);
+                    }
                 }
             }
         }
@@ -514,6 +518,30 @@ namespace YARG.Core.Chart
             songChart.VenueTrack.CameraCuts.AddRange(miloVenue.CameraCuts);
             songChart.VenueTrack.PostProcessing.AddRange(miloVenue.PostProcessingEvents);
             songChart.VenueTrack.Performer.AddRange(miloVenue.PerformerEvents);
+        }
+
+        // TODO: Work it out such that we can combine venue and lipsync
+        //  Also, we need to eventually parse lipsync from midi if it's there (rare, but it happens)
+        public static void LoadLipsyncFromMilo(SongChart songChart, SongEntry songEntry)
+        {
+            var miloLipsync = new MiloVenue(songChart, songEntry);
+            miloLipsync.Load();
+
+            songChart.LipsyncEvents.AddRange(miloLipsync.LipsyncEvents);
+            
+            // Generate lipsync from vocals if no lipsync data was found
+            if (songChart.LipsyncEvents.Count == 0)
+            {
+                GenerateLipsyncFromVocals(songChart);
+            }
+        }
+
+        public static void GenerateLipsyncFromVocals(SongChart songChart)
+        {
+            if (!songChart.Lyrics.IsEmpty)
+            {
+                songChart.LipsyncEvents.AddRange(LipsyncGenerator.GenerateFromLyrics(songChart.Lyrics));
+            }
         }
 
         // Add range shift events to the InstrumentDifficulty

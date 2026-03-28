@@ -11,7 +11,11 @@ namespace YARG.Core.Game.Settings
 
         Slider,
 
-        Toggle
+        Toggle,
+
+        FileInfo,
+
+        Ignore
     }
 
     public class SettingTypeAttribute : Attribute

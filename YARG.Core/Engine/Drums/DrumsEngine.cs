@@ -10,7 +10,7 @@ namespace YARG.Core.Engine.Drums
     {
         public delegate void OverhitEvent();
 
-        public delegate void PadHitEvent(DrumsAction action, bool noteWasHit, float velocity);
+        public delegate void PadHitEvent(DrumsAction action, bool noteWasHit, bool wereBonusPointsAwarded, DrumNoteType type, float velocity);
 
         public OverhitEvent? OnOverhit;
         public PadHitEvent?  OnPadHit;
@@ -81,6 +81,12 @@ namespace YARG.Core.Engine.Drums
                 return;
             }
 
+            if (PadHit != null && ActiveLaneIncludesNote((int) PadHit))
+            {
+                // Do not count this as an overhit if the last pad hit was part of an active lane
+                return;
+            }
+
             if (NoteIndex < Notes.Count)
             {
                 // Don't remove the phrase if the current note being overstrummed is the start of a phrase
@@ -91,7 +97,7 @@ namespace YARG.Core.Engine.Drums
             }
 
             ResetCombo();
-            EngineStats.Overhits++;
+            EngineStats.RecordOverhit((int?) Action);
 
             UpdateMultiplier();
 
@@ -153,7 +159,7 @@ namespace YARG.Core.Engine.Drums
 
             IncrementCombo();
 
-            EngineStats.NotesHit++;
+            EngineStats.IncrementNotesHit(note, CurrentTime);
 
             UpdateMultiplier();
 
@@ -460,7 +466,7 @@ namespace YARG.Core.Engine.Drums
                     (int) FourLaneDrumPad.RedDrum    => DrumsAction.RedDrum,
                     (int) FourLaneDrumPad.YellowDrum => DrumsAction.YellowDrum,
                     (int) FourLaneDrumPad.BlueDrum   => DrumsAction.BlueDrum,
-                    (int) FourLaneDrumPad.GreenDrum  => DrumsAction.GreenCymbal,
+                    (int) FourLaneDrumPad.GreenDrum  => DrumsAction.GreenDrum,
 
                     (int) FourLaneDrumPad.YellowCymbal => DrumsAction.YellowCymbal,
                     (int) FourLaneDrumPad.BlueCymbal   => DrumsAction.BlueCymbal,

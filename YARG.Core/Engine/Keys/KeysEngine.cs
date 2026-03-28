@@ -65,6 +65,7 @@ namespace YARG.Core.Engine.Keys
             : base(chart, syncTrack, engineParameters, true, isBot)
         {
             ChordStaggerTimer = new("Chord Stagger", engineParameters.ChordStaggerWindow);
+            EngineStats.TotalChords = Notes.Count;
         }
 
         public EngineTimer GetChordStaggerTimer() => ChordStaggerTimer;
@@ -123,6 +124,13 @@ namespace YARG.Core.Engine.Keys
             if (IsWaitCountdownActive)
             {
                 YargLogger.LogFormatTrace("Overstrum prevented during WaitCountdown at time: {0}, tick: {1}", CurrentTime, CurrentTick);
+                return;
+            }
+
+            // Prevent overhit if current button satisfies the active lane
+            if (IsLaneActive && ActiveLaneIncludesNote(key))
+            {
+                YargLogger.LogFormatTrace("Overhit prevented during lane at time: {0}, tick: {1}", CurrentTime, CurrentTick);
                 return;
             }
 

@@ -66,9 +66,10 @@ namespace YARG.Core.Chart
             // For solo vocals and HARM1, the static lyric phrases are always the same as the scoring phrases. HARM2 and HARM3 derive
             // their static lyric phrases from a different phrase type, so we have to run through again, looking for that type instead
             var staticLyricPhrases = isBacking ? GetVocalsPhrases(moonChart, harmonyPart, true) : notePhrases.Duplicate();
-            
+
             var otherPhrases = GetPhrases(moonChart);
             var textEvents = GetTextEvents(moonChart);
+            TrimOrphanPhrases(notePhrases, otherPhrases);
             return new(isHarmony, notePhrases, staticLyricPhrases, otherPhrases, textEvents);
         }
 
@@ -111,6 +112,8 @@ namespace YARG.Core.Chart
             int moonNoteIndex = 0;
             int moonTextIndex = 0;
 
+            VocalNote? carriedNote = null;
+            VocalNote? previousParentLyric = null;
             for (int moonPhraseIndex = 0; moonPhraseIndex < moonChart.specialPhrases.Count;)
             {
                 var moonPhrase = moonChart.specialPhrases[moonPhraseIndex++];
@@ -129,6 +132,11 @@ namespace YARG.Core.Chart
 
                     phraseTracker[moonPhrase2.type] = moonPhrase2;
                     moonPhraseIndex++;
+                }
+
+                if (carriedNote != null && carriedNote.Tick + carriedNote.TotalTickLength < moonPhrase.tick)
+                {
+                    carriedNote = null;
                 }
 
                 // Go through each note and lyric in the phrase
@@ -175,17 +183,50 @@ namespace YARG.Core.Chart
 
                     // Create new note
                     var note = CreateVocalNote(moonNote, harmonyPart, lyricFlags);
-                    if ((lyricFlags & LyricSymbolFlags.PitchSlide) != 0 && previousNote is not null)
+                    if ((lyricFlags & LyricSymbolFlags.PitchSlide) != 0)
                     {
-                        previousNote.AddChildNote(note);
-                        continue;
+                        if (previousNote is not null)
+                        {
+                            previousNote.AddChildNote(note);
+                            continue;
+                        }
+
+                        // Previous note is not in current phrase, add to existing carried note if it exists
+                        if (carriedNote is not null)
+                        {
+                            carriedNote.AddChildNote(note);
+                            continue;
+                        }
+
+                        // Previous note did not cross phrase boundary, but we are sliding across the boundary
+                        if (phrases.Count == 0)
+                        {
+                            // Must be a charting error, continue
+                            continue;
+                        }
+
+                        // Add to the previous parent note, making previous parent a carried note
+                        if (previousParentLyric is not null)
+                        {
+                            previousParentLyric.AddChildNote(note);
+
+                            carriedNote ??= previousParentLyric;
+
+                            continue;
+                        }
+                    }
+
+                    if (moonNote.tick + moonNote.length > moonPhrase.tick + moonPhrase.length)
+                    {
+                        carriedNote = note.ParentOrSelf;
                     }
 
                     notes.Add(note);
                     previousNote = note;
+                    previousParentLyric = note.ParentOrSelf.Type == VocalNoteType.Lyric ? note.ParentOrSelf : previousParentLyric;
                 }
 
-                if (notes.Count < 1)
+                if (notes.Count < 1 && carriedNote == null)
                 {
                     // This can occur on harmonies, HARM1 must contain phrases for all harmony parts
                     // so, for example, phrases with only HARM2/3 notes will cause this
@@ -198,6 +239,29 @@ namespace YARG.Core.Chart
 
             phrases.TrimExcess();
             return phrases;
+        }
+
+        private void TrimOrphanPhrases(List<VocalsPhrase> vocalPhrases, List<Phrase> otherPhrases)
+        {
+            int vocalPhraseIndex = 0;
+
+            foreach (var otherPhrase in otherPhrases.ToList())
+            {
+                while (vocalPhraseIndex < vocalPhrases.Count
+                    && vocalPhrases[vocalPhraseIndex].Tick < otherPhrase.Tick)
+                {
+                    vocalPhraseIndex++;
+                }
+
+                if (vocalPhraseIndex >= vocalPhrases.Count
+                    || vocalPhrases[vocalPhraseIndex].Tick > otherPhrase.Tick)
+                {
+                    // No match found.
+                    otherPhrases.Remove(otherPhrase);
+                }
+
+                // Otherwise, match found. Keep the other phrase.
+            }
         }
 
         private void ProcessLyric(List<LyricEvent> lyrics, ReadOnlySpan<char> lyric, uint lyricTick,
@@ -380,7 +444,7 @@ namespace YARG.Core.Chart
 
         private float GetVocalNotePitch(MoonNote moonNote, LyricSymbolFlags lyricFlags)
         {
-            float pitch = moonNote.vocalsPitch;
+            float pitch = moonNote.vocalsPitch + (0.01f * _settings.TuningOffsetCents);
 
             // Unpitched/percussion notes
             if ((lyricFlags & LyricSymbolFlags.NonPitched) != 0 || (moonNote.flags & MoonNote.Flags.Vocals_Percussion) != 0)
@@ -430,7 +494,7 @@ namespace YARG.Core.Chart
             // No need to check the start of the phrase, as entering the function
             // already guarantees that condition *if* the below is true
             var starPower = phrasetracker[MoonPhrase.Type.Starpower];
-            if (starPower != null &&  moonPhrase.tick < starPower.tick + starPower.length)
+            if (starPower != null && moonPhrase.tick < starPower.tick + starPower.length)
             {
                 phraseFlags |= NoteFlags.StarPower;
             }

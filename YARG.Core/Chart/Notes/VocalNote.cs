@@ -72,7 +72,7 @@ namespace YARG.Core.Chart
         public bool IsPhrase => Type is VocalNoteType.VocalPhrase or VocalNoteType.PercussionPhrase;
 
         /// <summary>
-        /// Whether or not this note is a vocal phrase.
+        /// Whether or not this note is a vocal phrase (either percussion or lyrical).
         /// </summary>
         public bool IsVocalPhrase => Type == VocalNoteType.VocalPhrase;
 
@@ -80,6 +80,11 @@ namespace YARG.Core.Chart
         /// Whether or not this note is a percussion phrase.
         /// </summary>
         public bool IsPercussionPhrase => Type == VocalNoteType.PercussionPhrase;
+
+        /// <summary>
+        /// Whether or not this note is a vocal phrase that contains only lyric notes.
+        /// </summary>
+        public bool IsLyricPhrase => Type == VocalNoteType.VocalPhrase && ChildNotes.All(e => e.Type == VocalNoteType.Lyric);
 
         /// <summary>
         /// Whether or not this note is a vocal phrase that contains no notes.
@@ -173,10 +178,10 @@ namespace YARG.Core.Chart
         {
             /*
              TODO Add same child note checking like the other instruments
-             (but I have no idea how vocals works) - Riley
+             (but I have no idea how vocals works) - Riley 
             */
 
-            if (IsPhrase)
+            if (IsLyricPhrase)
             {
                 if (note.Tick < Tick) return;
 
@@ -192,16 +197,18 @@ namespace YARG.Core.Chart
             }
             else
             {
-                if (note.Tick <= Tick || note.ChildNotes.Count > 0) return;
+                // Use strict less-than (<) instead of less-than-or-equal (<=) to allow notes
+                // that start on the same tick as the parent phrase. This is necessary for formats
+                // like UltraStar where the first note of a phrase can share the same start tick
+                // as the phrase itself. The original <= would silently discard such notes.
+                if (note.Tick < Tick || note.ChildNotes.Count > 0) return;
 
                 _childNotes.Add(note);
 
                 // Sort child notes by tick
                 _childNotes.Sort((note1, note2) =>
                 {
-                    if (note1.Tick > note2.Tick) return 1;
-                    if (note1.Tick < note2.Tick) return -1;
-                    return 0;
+                    return note1.Tick.CompareTo(note2.Tick);
                 });
 
                 // Track total length
@@ -223,6 +230,25 @@ namespace YARG.Core.Chart
         public void RemovePercussionChildNotes()
         {
             _childNotes.RemoveAll(e => e.Type == VocalNoteType.Percussion);
+        }
+
+        /// <summary>
+        /// Gets the number of ticks for the specified note that are within this parent note/phrase's bounds. If the note is outside of the parent note's bounds, 0 is returned.
+        /// </summary>
+        /// <param name="note">The note to be evaluated.</param>
+        /// <returns>The number of ticks for the provided note that falls within this note's bounds.</returns>
+        public uint GetTicksForNote(VocalNote note)
+        {
+            var start = Math.Max(note.Tick, Tick);
+            // Note the use of TotalTickEnd here to account for child notes (from slides), but *not* for the containing Phrase.
+            var end = Math.Min(note.TotalTickEnd, TickEnd);
+
+            if (start >= end)
+            {
+                return 0;
+            }
+
+            return end - start;
         }
     }
 
