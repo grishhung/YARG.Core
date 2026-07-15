@@ -419,3 +419,4 @@ FodyWeavers.xsd
 !*.asmdef.meta # Unity depends on asmdef GUIDs
 !csc.rsp
 .artifacts/
+.DS_Store
