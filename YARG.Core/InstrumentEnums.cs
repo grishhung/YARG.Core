@@ -218,12 +218,13 @@ namespace YARG.Core
                 },
                 GameMode.ProKeys => new[]
                 {
-                    Instrument.ProKeys,
                     Instrument.Keys,
+                    Instrument.ProKeys,
                     Instrument.FiveFretGuitar,
                     Instrument.FiveFretBass,
                     Instrument.FiveFretRhythm,
-                    Instrument.FiveFretCoopGuitar
+                    Instrument.FiveFretCoopGuitar,
+                    Instrument.FourLaneDrums,
                 },
                 GameMode.Vocals => new[]
                 {

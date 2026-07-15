@@ -71,7 +71,7 @@ namespace YARG.Core.Chart
 
         public uint SustainTicksHeld;
 
-        public TNote? Parent { get; private set; }
+        public TNote? Parent { get; set; }
         public List<TNote> ChildNotes => _childNotes;
 
         /// <summary>

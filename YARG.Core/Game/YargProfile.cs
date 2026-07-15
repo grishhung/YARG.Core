@@ -12,7 +12,7 @@ namespace YARG.Core.Game
 {
     public class YargProfile
     {
-        private const int PROFILE_VERSION = 7;
+        private const int PROFILE_VERSION = 8;
 
         public Guid Id;
         public string Name;
@@ -39,6 +39,10 @@ namespace YARG.Core.Game
         public OpenLaneDisplayType OpenLaneDisplayType;
 
         public StarPowerActivationType StarPowerActivationType;
+
+        public bool  ShowButtonLabels;
+        public bool  ShowButtonPartition;
+        public float ButtonPartitionPosition;
 
         public int? AutoConnectOrder;
 
@@ -128,6 +132,9 @@ namespace YARG.Core.Game
             SwapCrashAndRide = false;
             StarPowerActivationType = StarPowerActivationType.RightmostNote;
             OpenLaneDisplayType = OpenLaneDisplayType.Never;
+            ShowButtonLabels = false;
+            ShowButtonPartition = false;
+            ButtonPartitionPosition = 0.4f;
 
             // Set preset IDs to default
             ColorProfile = Game.ColorProfile.Default.Id;
@@ -208,6 +215,19 @@ namespace YARG.Core.Game
             else
             {
                 OpenLaneDisplayType = OpenLaneDisplayType.Never;
+            }
+
+            if (version >= 8)
+            {
+                ShowButtonLabels = stream.ReadBoolean();;
+                ShowButtonPartition = stream.ReadBoolean();;
+                ButtonPartitionPosition = stream.Read<float>(Endianness.Little);
+            }
+            else
+            {
+                ShowButtonLabels = false;
+                ShowButtonPartition = false;
+                ButtonPartitionPosition = 0.4f;
             }
         }
 
@@ -405,6 +425,10 @@ namespace YARG.Core.Game
             writer.Write((byte) GameMode);
 
             writer.Write((byte) OpenLaneDisplayType);
+
+            writer.Write(ShowButtonLabels);
+            writer.Write(ShowButtonPartition);
+            writer.Write(ButtonPartitionPosition);
         }
     }
 }

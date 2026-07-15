@@ -1,4 +1,5 @@
 ﻿using System;
+using static YARG.Core.Engine.Keys.FiveLaneKeysEngine;
 
 namespace YARG.Core.Chart
 {
@@ -22,6 +23,15 @@ namespace YARG.Core.Chart
         public bool IsStarPowerActivator => (DrumFlags & DrumNoteFlags.StarPowerActivator) != 0;
 
         public override int LaneNote => Pad;
+        public int FiveLaneKeysPad => (FourLaneDrumPad)Pad switch
+        {
+            FourLaneDrumPad.Kick                                       => 1,
+            FourLaneDrumPad.RedDrum                                    => 2,
+            FourLaneDrumPad.YellowDrum or FourLaneDrumPad.YellowCymbal => 3,
+            FourLaneDrumPad.BlueDrum or FourLaneDrumPad.BlueCymbal     => 4,
+            FourLaneDrumPad.GreenDrum or FourLaneDrumPad.GreenCymbal   => 5,
+            _                                                          => throw new Exception("Unhandled.")
+        };
 
         public DrumNote(FourLaneDrumPad pad, DrumNoteType noteType, DrumNoteFlags drumFlags,
             NoteFlags flags, double time, uint tick)

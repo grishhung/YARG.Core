@@ -255,6 +255,7 @@ namespace YARG.Core.Chart
                 Instrument.FiveFretRhythm => FiveFretRhythm,
                 Instrument.FiveFretBass => FiveFretBass,
                 Instrument.Keys => Keys,
+                Instrument.FourLaneDrums => ConvertToFiveFretTrack(FourLaneDrums),
                 _ => throw new ArgumentException($"Instrument {instrument} is not a 5-fret guitar instrument!")
             };
         }
@@ -556,6 +557,66 @@ namespace YARG.Core.Chart
             }
 
             return (musicStart, musicEnd);
+        }
+
+        private static InstrumentTrack<GuitarNote> ConvertToFiveFretTrack(InstrumentTrack<DrumNote> fourLaneDrumsTrack)
+        {
+            Dictionary<Difficulty, InstrumentDifficulty<GuitarNote>> newDifficulties = new();
+            var difficulties = fourLaneDrumsTrack.Difficulties;
+
+            foreach (var difficulty in difficulties.Keys)
+            {
+                var difficultyData = difficulties[difficulty];
+                var newChords = difficultyData.Notes.Select(ConvertToGuitarChord).ToList();
+
+                InstrumentDifficulty<GuitarNote> newDiff = new(
+                    Instrument.FourLaneDrums,
+                    difficulty,
+                    newChords,
+                    difficultyData.Phrases.Where(phrase => phrase.Type != PhraseType.DrumFill).ToList(),
+                    difficultyData.TextEvents
+                );
+
+                newDifficulties[difficulty] = newDiff;
+            }
+
+            return new InstrumentTrack<GuitarNote>(
+                Instrument.FourLaneDrums,
+                newDifficulties,
+                fourLaneDrumsTrack.AnimationEvents
+            );
+        }
+
+        public static GuitarNote ConvertToGuitarChord(DrumNote drumNote)
+        {
+            var guitarNote = ConvertToGuitarChordWithoutChildren(drumNote);
+
+            foreach (var childDrumNote in drumNote.ChildNotes)
+            {
+                guitarNote.AddChildNote(ConvertToGuitarNote(childDrumNote));
+            }
+
+            return guitarNote;
+        }
+
+        public static GuitarNote ConvertToGuitarChordWithoutChildren(DrumNote drumNote)
+        {
+            var guitarNote = ConvertToGuitarNote(drumNote);
+            return guitarNote;
+        }
+
+        private static GuitarNote ConvertToGuitarNote(DrumNote drumNote)
+        {
+            return new GuitarNote(
+                drumNote.FiveLaneKeysPad,
+                GuitarNoteType.Strum,
+                GuitarNoteFlags.None,
+                drumNote.Flags,
+                drumNote.Time,
+                drumNote.TimeLength,
+                drumNote.Tick,
+                drumNote.TickLength
+            );
         }
     }
 }

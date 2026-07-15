@@ -18,7 +18,7 @@ namespace YARG.Core.Chart
         public List<AnimationEvent> AnimationEvents { get; }      = new();
         public AnimationTrack       Animations      { get; }      = new();
 
-        private Dictionary<Difficulty, InstrumentDifficulty<TNote>> _difficulties { get; } = new();
+        public Dictionary<Difficulty, InstrumentDifficulty<TNote>> Difficulties { get; } = new();
 
         /// <summary>
         /// Whether or not this track contains any data.
@@ -27,7 +27,7 @@ namespace YARG.Core.Chart
         {
             get
             {
-                foreach (var difficulty in _difficulties.Values)
+                foreach (var difficulty in Difficulties.Values)
                 {
                     if (!difficulty.IsEmpty)
                         return false;
@@ -45,7 +45,7 @@ namespace YARG.Core.Chart
         public InstrumentTrack(Instrument instrument, Dictionary<Difficulty, InstrumentDifficulty<TNote>> difficulties)
             : this(instrument)
         {
-            _difficulties = difficulties;
+            Difficulties = difficulties;
         }
 
         public InstrumentTrack(Instrument instrument, Dictionary<Difficulty, InstrumentDifficulty<TNote>> difficulties,
@@ -63,9 +63,9 @@ namespace YARG.Core.Chart
         public InstrumentTrack(InstrumentTrack<TNote> other)
             : this(other.Instrument)
         {
-            foreach (var (difficulty, diffTrack) in other._difficulties)
+            foreach (var (difficulty, diffTrack) in other.Difficulties)
             {
-                _difficulties.Add(difficulty, diffTrack.Clone());
+                Difficulties.Add(difficulty, diffTrack.Clone());
             }
 
             foreach (var animationEvent in other.AnimationEvents)
@@ -79,20 +79,20 @@ namespace YARG.Core.Chart
         public void AddAnimationEvent(IEnumerable<AnimationEvent> animationEvents) => AnimationEvents.AddRange(animationEvents);
 
         public void AddDifficulty(Difficulty difficulty, InstrumentDifficulty<TNote> track)
-            => _difficulties.Add(difficulty, track);
+            => Difficulties.Add(difficulty, track);
 
         public void RemoveDifficulty(Difficulty difficulty)
-            => _difficulties.Remove(difficulty);
+            => Difficulties.Remove(difficulty);
 
         public InstrumentDifficulty<TNote> GetDifficulty(Difficulty difficulty)
-            => _difficulties[difficulty];
+            => Difficulties[difficulty];
 
         public bool TryGetDifficulty(Difficulty difficulty, [NotNullWhen(true)] out InstrumentDifficulty<TNote>? track)
-            => _difficulties.TryGetValue(difficulty, out track);
+            => Difficulties.TryGetValue(difficulty, out track);
 
         // For unit tests
         internal InstrumentDifficulty<TNote> FirstDifficulty()
-            => _difficulties.First().Value;
+            => Difficulties.First().Value;
 
         /// <summary>
         /// Gets the start time of the first event in any difficulty in this track
@@ -102,7 +102,7 @@ namespace YARG.Core.Chart
         public double GetStartTime()
         {
             double totalStartTime = double.MaxValue;
-            foreach (var difficulty in _difficulties.Values)
+            foreach (var difficulty in Difficulties.Values)
             {
                 totalStartTime = Math.Min(difficulty.GetStartTime(), totalStartTime);
             }
@@ -113,7 +113,7 @@ namespace YARG.Core.Chart
         public double GetEndTime()
         {
             double totalEndTime = 0;
-            foreach (var difficulty in _difficulties.Values)
+            foreach (var difficulty in Difficulties.Values)
             {
                 totalEndTime = Math.Max(difficulty.GetEndTime(), totalEndTime);
             }
@@ -125,7 +125,7 @@ namespace YARG.Core.Chart
         {
             double startTime = double.MaxValue;
 
-            foreach (var difficulty in _difficulties.Values)
+            foreach (var difficulty in Difficulties.Values)
             {
                 startTime = Math.Min(difficulty.GetFirstNoteStartTime() ?? double.MaxValue, startTime);
             }
@@ -137,7 +137,7 @@ namespace YARG.Core.Chart
         {
             double endTime = 0;
 
-            foreach (var difficulty in _difficulties.Values)
+            foreach (var difficulty in Difficulties.Values)
             {
                 endTime = Math.Max(difficulty.GetLastNoteEndTime(), endTime);
             }
@@ -148,7 +148,7 @@ namespace YARG.Core.Chart
         public uint GetFirstTick()
         {
             uint totalFirstTick = 0;
-            foreach (var difficulty in _difficulties.Values)
+            foreach (var difficulty in Difficulties.Values)
             {
                 totalFirstTick = Math.Min(difficulty.GetFirstTick(), totalFirstTick);
             }
@@ -159,7 +159,7 @@ namespace YARG.Core.Chart
         public uint GetLastTick()
         {
             uint totalLastTick = 0;
-            foreach (var difficulty in _difficulties.Values)
+            foreach (var difficulty in Difficulties.Values)
             {
                 totalLastTick = Math.Max(difficulty.GetLastTick(), totalLastTick);
             }
